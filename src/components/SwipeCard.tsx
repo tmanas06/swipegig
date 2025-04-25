@@ -5,7 +5,6 @@ import { JobPost } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
 
 interface SwipeCardProps {
   job: JobPost;
@@ -124,18 +123,16 @@ export function SwipeCard({ job, onSwipe, onNegotiate }: SwipeCardProps) {
           Posted {job.postedAt}
         </div>
         <div className="flex space-x-2">
-          <DialogTrigger asChild>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onNegotiate();
-              }}
-            >
-              Negotiate
-            </Button>
-          </DialogTrigger>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNegotiate();
+            }}
+          >
+            Negotiate
+          </Button>
           <Button 
             size="sm"
             className="bg-web3-primary hover:bg-web3-secondary text-white"
