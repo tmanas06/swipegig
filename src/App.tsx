@@ -11,10 +11,14 @@ import PostJob from "./pages/PostJob";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import MyProfile from "./pages/MyProfile";
+import Settings from "./pages/Settings";
+import { ProfileProvider } from './contexts/ProfileContext';
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ProfileProvider>
   <QueryClientProvider client={queryClient}>
     <WalletProvider>
       <TooltipProvider>
@@ -27,12 +31,17 @@ const App = () => (
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/profile" element={<MyProfile />} />
+            <Route path="/settings" element={<Settings />} />
+            {/* Add more routes as needed */}
+            {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </WalletProvider>
   </QueryClientProvider>
+  </ProfileProvider>
 );
 
 export default App;
