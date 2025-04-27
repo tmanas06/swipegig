@@ -20,6 +20,7 @@ import { uploadJSONToIPFS } from '@/utils/pinata';
 import { ethers } from 'ethers';
 import Web3WorkJobsABI from '../contracts/JobsAbi.json';
 import { uploadFileToIPFS } from '@/utils/pinata';
+import Groq from "groq-sdk";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_JOBS_CONTRACT_ADDRESS;
 
@@ -92,6 +93,11 @@ const [logoPreview, setLogoPreview] = useState<string>('');
       skills: prev.skills.filter(s => s !== skillToRemove)
     }));
   };
+  const groq = new Groq({
+    apiKey: import.meta.env.VITE_GROQ_API_KEY,
+    dangerouslyAllowBrowser: true // Only for frontend implementation
+  });
+  const [prompt, setPrompt] = useState(""); // Add this line
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,24 +159,70 @@ const [logoPreview, setLogoPreview] = useState<string>('');
     }
   };
 
-  const generateWithAI = () => {
+  const generateWithAI = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setForm({
-        ...form,
-        title: 'Smart Contract Developer for NFT Marketplace',
-        description: 'We need an experienced Solidity developer to help us build a new NFT marketplace with royalty features and multi-chain support. The ideal candidate will have experience with ERC-721 and ERC-1155 standards, as well as OpenZeppelin contracts. This is a 2-4 week project with possibility of extension.',
-        category: 'Smart Contract Development',
-        skills: ['Solidity', 'ERC-721', 'ERC-1155', 'OpenZeppelin'],
-        budgetMin: 2000,
-        budgetMax: 5000,
-        duration: '2-4 weeks',
-        location: 'remote',
-        immediate: true,
+    try {
+      const response = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: `You are a job posting assistant for web3 roles. Generate a job post using this template:
+            Title: [Seniority] [Role] for [Project Type]
+            Company: ${form.companyName || "Our web3 company"}
+            Skills: ${profile.skills?.join(", ") || "Solidity, React"} + [3-5 relevant skills]
+            Budget: $${form.budgetMin}-$${form.budgetMax} USDC
+            Duration: [1-3 months]
+            Responsibilities: 5 bullet points
+            Requirements: 5 bullet points`
+          },
+          {
+            role: "user",
+            content: prompt || "Create a job post for a smart contract developer"
+          }
+        ],
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        temperature: 0.7
       });
+  
+      const generatedText = response.choices[0]?.message?.content || "";
+      
+      // Parse the AI response
+      const parsedJob = parseGeneratedText(generatedText);
+      
+      // Update form state
+      setForm(prev => ({
+        ...prev,
+        title: parsedJob.title || prev.title,
+        description: parsedJob.description || prev.description,
+        skills: parsedJob.skills || prev.skills,
+        budgetMin: parsedJob.budgetMin || prev.budgetMin,
+        budgetMax: parsedJob.budgetMax || prev.budgetMax,
+        duration: parsedJob.duration || prev.duration,
+        category: parsedJob.category || prev.category
+      }));
+      
+    } catch (error) {
+      console.error("AI generation failed:", error);
+      toast.error("Failed to generate job post");
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
+  
+  // Add this helper function
+  const parseGeneratedText = (text: string) => {
+    // Simple parsing logic - adjust based on your needs
+    return {
+      title: text.match(/Title:\s*(.+)/)?.[1] || "",
+      description: text.match(/Description:\s*([\s\S]+?)(?=Skills:)/)?.[1] || "",
+      skills: text.match(/Skills:\s*(.+)/)?.[1]?.split(/,\s*/) || [],
+      budgetMin: parseInt(text.match(/\$(\d+)-/)?.[1] || "500"),
+      budgetMax: parseInt(text.match(/-\$(\d+)/)?.[1] || "2000"),
+      duration: text.match(/Duration:\s*(.+)/)?.[1] || "",
+      category: text.match(/Category:\s*(.+)/)?.[1] || "Smart Contract Development"
+    };
+  };
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -233,6 +285,8 @@ const [logoPreview, setLogoPreview] = useState<string>('');
     <div className="flex gap-2">
       <Textarea
         id="ai-prompt"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
         placeholder="I need a smart contract developer familiar with Solidity who can build an NFT marketplace..."
         className="resize-none"
       />
@@ -242,11 +296,17 @@ const [logoPreview, setLogoPreview] = useState<string>('');
         disabled={isGenerating}
         className="bg-web3-primary hover:bg-web3-secondary text-white"
       >
-        {isGenerating ? 'Generating...' : 'Generate'}
+        {isGenerating ? (
+          <>
+            <span className="mr-2 animate-spin">⟳</span>
+            Generating...
+          </>
+        ) : 'Generate'}
       </Button>
     </div>
   </div>
 )}
+
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
