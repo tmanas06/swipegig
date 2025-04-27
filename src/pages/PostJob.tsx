@@ -21,6 +21,8 @@ import { ethers } from 'ethers';
 import Web3WorkJobsABI from '../contracts/JobsAbi.json';
 import { uploadFileToIPFS } from '@/utils/pinata';
 import Groq from "groq-sdk";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_JOBS_CONTRACT_ADDRESS;
 
@@ -39,6 +41,8 @@ interface FormState {
 }
 
 const PostJob = () => {
+  const [aiMarkdown, setAiMarkdown] = useState<string>("");
+
   const navigate = useNavigate();
   const { account } = useWallet();
   const { profile } = useProfile();
@@ -166,14 +170,27 @@ const [logoPreview, setLogoPreview] = useState<string>('');
         messages: [
           {
             role: "system",
-            content: `You are a job posting assistant for web3 roles. Generate a job post using this template:
-            Title: [Seniority] [Role] for [Project Type]
-            Company: ${form.companyName || "Our web3 company"}
-            Skills: ${profile.skills?.join(", ") || "Solidity, React"} + [3-5 relevant skills]
-            Budget: $${form.budgetMin}-$${form.budgetMax} USDC
-            Duration: [1-3 months]
-            Responsibilities: 5 bullet points
-            Requirements: 5 bullet points`
+            content: `
+      You are an AI assistant for a Web3 gig posting platform. 
+      Your job is to generate complete job listings based on a user's short prompt. 
+      Use the following template to fill the fields clearly:
+      
+      - Title: Write a short, professional job title. Format: [Seniority Level] [Role] for [Project Type]
+      - Description: Write a 2–4 sentence engaging description. Mention the company name if provided.
+      - Company: Use the provided company name, or "Our Web3 Company" if not available.
+      - Category: Suggest the best fitting category based on the job role. Default to "${form.category || "Smart Contract Development"}" if unsure.
+      - Budget: Use the provided budget: $${form.budgetMin}–$${form.budgetMax} USDC
+      - Duration: Suggest an appropriate duration (e.g., 1–3 months for most projects).
+      - Responsibilities: Write 4–5 bullet points of core tasks the candidate will perform.
+      - Requirements: Write 4–5 bullet points with required skills, experience, or qualifications.
+      - Location: Assume "Remote" unless the user specifies otherwise.
+      - Immediate Start: Assume "No" unless otherwise specified.
+      - Skills: List 5–7 specific and relevant skills, combining provided profile skills ("${profile.skills?.join(", ") || "Solidity, React"}") plus 3-5 others that match the role.
+      - For the Skills field, output a single comma-separated list of skills, e.g.: Solidity, React, Ethers.js, Hardhat, Web3.js.
+      
+      
+      Keep the tone professional but inviting. Be clear, structured, and specific.
+      `
           },
           {
             role: "user",
@@ -185,7 +202,7 @@ const [logoPreview, setLogoPreview] = useState<string>('');
       });
   
       const generatedText = response.choices[0]?.message?.content || "";
-      
+      setAiMarkdown(generatedText);
       // Parse the AI response
       const parsedJob = parseGeneratedText(generatedText);
       
@@ -208,20 +225,35 @@ const [logoPreview, setLogoPreview] = useState<string>('');
       setIsGenerating(false);
     }
   };
-  
+  const stripMarkdown = (text: string) =>
+    text
+      .replace(/\*\*/g, "") // remove bold
+      .replace(/^- /gm, "") // remove list dashes at line start
+      .replace(/[`*_#]/g, "") // remove other markdown
+      .trim();
   // Add this helper function
   const parseGeneratedText = (text: string) => {
-    // Simple parsing logic - adjust based on your needs
+    // Capture skills block up to next field
+    const skillsMatch = text.match(/Skills:\s*([^\n]+)/i);
+let skills: string[] = [];
+if (skillsMatch) {
+  skills = skillsMatch[1]
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
     return {
-      title: text.match(/Title:\s*(.+)/)?.[1] || "",
-      description: text.match(/Description:\s*([\s\S]+?)(?=Skills:)/)?.[1] || "",
-      skills: text.match(/Skills:\s*(.+)/)?.[1]?.split(/,\s*/) || [],
+      title: stripMarkdown(text.match(/Title:\s*(.+)/)?.[1] || ""),
+      description: stripMarkdown(text.match(/Description:\s*([\s\S]+?)(?=Skills:)/)?.[1] || ""),
+      skills,
       budgetMin: parseInt(text.match(/\$(\d+)-/)?.[1] || "500"),
       budgetMax: parseInt(text.match(/-\$(\d+)/)?.[1] || "2000"),
-      duration: text.match(/Duration:\s*(.+)/)?.[1] || "",
-      category: text.match(/Category:\s*(.+)/)?.[1] || "Smart Contract Development"
+      duration: stripMarkdown(text.match(/Duration:\s*(.+)/)?.[1] || ""),
+      category: stripMarkdown(text.match(/Category:\s*(.+)/)?.[1] || "Smart Contract Development")
     };
   };
+  
   
 
   return (
