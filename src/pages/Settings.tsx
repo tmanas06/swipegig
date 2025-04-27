@@ -16,6 +16,9 @@ import {
 import { useWallet } from "../context/WalletContext";
 import { uploadJSONToIPFS, uploadFileToIPFS } from "@/utils/pinata";
 import { useProfile } from '../contexts/ProfileContext';
+import { ethers } from "ethers";
+import Web3WorkProfilesABI from '../contracts/IpcmAbi.json' // Your contract ABI
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS
 
 export default function Settings() {
   const { account } = useWallet();
@@ -137,7 +140,51 @@ if (imageFile) {
 
       // Upload to IPFS and get CID
       const cid = await uploadJSONToIPFS(updatedProfile);
+      // Initialize ethers provider and signer
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      // After uploading JSON to IPFS:
+console.log("Uploaded profile CID:", cid);
 
+      // Add this utility function
+const getRSKChecksumAddress = (address: string) => {
+  return ethers.getAddress(address.toLowerCase());
+};
+
+// Modify contract initialization
+const contract = new ethers.Contract(
+  getRSKChecksumAddress(CONTRACT_ADDRESS), // Apply RSK checksum
+  Web3WorkProfilesABI,
+  signer
+);
+
+
+      // Update contract
+      const tx = await contract.updateProfileCID(cid);
+      await tx.wait(); // Wait for transaction confirmation
+      if (profile.lastCID) {
+        try {
+          const options = {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_PINATA_JWT}`
+            }
+          };
+          
+          const unpinResponse = await fetch(`https://api.pinata.cloud/pinning/unpin/${profile.lastCID}`, options);
+          
+          if (unpinResponse.ok) {
+            console.log("Previous CID unpinned successfully");
+          } else {
+            console.error("Failed to unpin CID:", await unpinResponse.text());
+          }
+        } catch (unpinError) {
+          console.error("Error during unpin request:", unpinError);
+          // Continue with profile update even if unpinning fails
+        }
+      }
+      
+      // Then proceed with updating the profile state:
       // Update global profile state
       updateProfile({
         ...updatedProfile,

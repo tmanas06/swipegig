@@ -14,7 +14,7 @@ import NotFound from "./pages/NotFound";
 import MyProfile from "./pages/MyProfile";
 import Settings from "./pages/Settings";
 import { ProfileProvider } from './contexts/ProfileContext';
-
+import RegistrationPage from "./pages/RegistrationPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<MyProfile />} />
             <Route path="/settings" element={<Settings />} />
+<Route path="/register" element={<RegistrationPage />} />
             {/* Add more routes as needed */}
             {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />

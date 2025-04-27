@@ -1,4 +1,4 @@
-import React from "react";
+import React,  { useState, useEffect }  from "react";
 import { Header } from "@/components/Header";
 import {
   Shield,
@@ -10,10 +10,149 @@ import {
   LinkedIn,
   Twitter,
 } from "@mui/icons-material";
-import { useProfile } from "@/contexts/ProfileContext";
+import { useWallet } from "../context/WalletContext";
+import { ethers } from "ethers";
+import Web3WorkProfilesABI from '../contracts/IpcmAbi.json';
 import { convertIPFSURL } from "../utils/ipfs";
+import { Navigate } from "react-router-dom";
+
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+
+
 export default function MyProfile() {
-  const { profile } = useProfile();
+  const { account } = useWallet();
+  interface Profile {
+    name: string;
+    bio: string;
+    profilePic: string;
+    wallet: string;
+    did: string;
+    verified: boolean;
+    social: {
+      github: string;
+      linkedin: string;
+      twitter: string;
+    };
+    reputation: {
+      score: number;
+      jobs: number;
+      breakdown: { label: string; value: number }[];
+    };
+    lens: string;
+    skillNFTs: string[];
+    gitcoinStamps: number;
+    skills: string[];
+    portfolio: { name: string; link: string; rating: number }[];
+    reviews: { client: string; date: string; comment: string }[];
+    lastCID?: string;
+  }
+
+  const [profile, setProfile] = useState<Profile>({
+    name: "",
+    bio: "",
+    profilePic: "",
+    wallet: "",
+    did: "",
+    verified: false,
+    social: {
+      github: "",
+      linkedin: "",
+      twitter: "",
+    },
+    reputation: {
+      score: 0,
+      jobs: 0,
+      breakdown: [],
+    },
+    lens: "",
+    skillNFTs: [],
+    gitcoinStamps: 0,
+    skills: [],
+    portfolio: [],
+    reviews: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    // In MyProfile.tsx's useEffect
+const fetchProfile = async () => {
+  if (!account) {
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS.toLowerCase(),
+      Web3WorkProfilesABI,
+      provider
+    );
+
+    // 1. Verify CID exists
+    const cid = await contract.getProfileCID(account);
+    if (!cid || cid.startsWith("<")) { // Basic HTML check
+      throw new Error("Invalid CID from contract");
+    }
+
+    // 2. Debugging: Log the CID and URL
+    console.log("Fetching profile CID:", cid);
+    const url = convertIPFSURL(cid);
+    console.log("Fetching from URL:", url);
+
+    // 3. Fetch and verify response
+    const response = await fetch(url);
+    const text = await response.text();
+    
+    if (!response.ok || text.startsWith("<!DOCTYPE")) {
+      throw new Error(`IPFS fetch failed: ${text.slice(0, 50)}...`);
+    }
+
+    // 4. Parse JSON
+    const profileData = JSON.parse(text);
+    setProfile(profileData);
+
+  } catch (err) {
+    console.error("Error:", err);
+  
+  // Check for contract revert with "Profile not registered" message
+  if (err.toString().includes("Profile not registered")) {
+    // Use Navigate component instead of window.location for React Router
+    setError("PROFILE_NOT_FOUND");
+    return;
+  }
+  
+  setError(err instanceof Error ? err.message : "Failed to load profile");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+    fetchProfile();
+  }, [account]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+ // Update the error display section
+if (error) {
+  if (error === "PROFILE_NOT_FOUND") {
+    return <Navigate to="/register" replace />;
+  }
+  
+  return (
+    <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+      <div className="text-red-500 text-lg">{error}</div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,7 +162,7 @@ export default function MyProfile() {
           {/* Profile Header */}
           <div className="flex flex-col md:flex-row items-center gap-6 bg-white rounded-2xl shadow p-6 mb-6">
           <img
-  src={convertIPFSURL(profile.profilePic)}
+  src={profile.profilePic}
   alt={profile.name}
   className="w-24 h-24 rounded-full object-cover border-4 border-purple-200"
 />
