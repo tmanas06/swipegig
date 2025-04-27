@@ -53,6 +53,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "ethers": "^6.13.7",
     "framer-motion": "^12.9.2",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
@@ -70,6 +71,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vite_react_shadcn_ts": "file:",
+    "wagmi": "^2.15.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
