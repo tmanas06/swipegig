@@ -32,11 +32,11 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between py-4">
         <Link to="/" className="flex items-center space-x-0">
-        <img 
+        {/* <img 
           src="/src/components/ui/hat.png" 
           alt="Hat Logo" 
           className="w-19 h-11 -mr-0.5" 
-        />
+        /> */}
         <span className="text-4xl font-bold bg-gradient-to-r from-web3-primary to-web3-tertiary bg-clip-text text-transparent">
           SwipeGig
         </span>
