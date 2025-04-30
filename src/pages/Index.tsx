@@ -44,6 +44,9 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-web3-light/20 to-web3-primary/10 -z-10"></div>
           
           <div className="w-full max-w-4xl mx-auto mb-8 relative z-10">
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-500 to-black bg-clip-text text-transparent">
+            Swipe
+          </h2>
             <h1 className="text-4xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-web3-primary to-web3-tertiary bg-clip-text text-transparent">
               Find work. Find talent.
               <br /> 
