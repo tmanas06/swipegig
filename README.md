@@ -1,8 +1,8 @@
-# 🌐 Web3Work – Decentralized Talent Marketplace
+# 🌐 SwipeGig – Decentralized Talent Marketplace
 
 **Find Work. Find Talent. Decentralized. Instant.**
 
-Web3Work is a decentralized, trustless freelance marketplace that connects Web3 professionals and clients using AI-powered job matching, on-chain identity, and smart contract-based payments. It removes intermediaries, enabling instant, secure, and transparent hiring and payments — all on-chain.
+SwipeGig is a decentralized, trustless freelance marketplace that connects Web3 professionals and clients using AI-powered job matching, on-chain identity, and smart contract-based payments. It removes intermediaries, enabling instant, secure, and transparent hiring and payments — all on-chain.
 
 ---
 
@@ -38,17 +38,17 @@ Web3Work is a decentralized, trustless freelance marketplace that connects Web3 
 
 ## 📝 Prompt Summary
 
-> Web3Work is the decentralized equivalent of Upwork or Fiverr for the blockchain ecosystem. The dApp allows users to authenticate using wallets, build trust using on-chain identity and credentials, and use AI to match freelancers with Web3 jobs. Smart contracts handle all payments in a secure, fee-less, and milestone-based structure. It’s built for speed, transparency, and true decentralization in the global freelance economy.
+> SwipeGig is the decentralized equivalent of Upwork or Fiverr for the blockchain ecosystem. The dApp allows users to authenticate using wallets, build trust using on-chain identity and credentials, and use AI to match freelancers with Web3 jobs. Smart contracts handle all payments in a secure, fee-less, and milestone-based structure. It’s built for speed, transparency, and true decentralization in the global freelance economy.
 
 ---
 
 ## 🔗 Links
 
-- 🔴 **Live App:** [web3work.xyz](https://web3work.xyz)  
-- 🧠 **GitHub Repo:** [github.com/yourusername/web3work](https://github.com/yourusername/web3work)  
+- 🔴 **Live App:** [SwipeGig.xyz](https://rootstock-hackathon-wiuu.vercel.app/)  
+- 🧠 **GitHub Repo:** [github.com/yourusername/SwipeGig](https://github.com/tmanas06/rootstock_hackathon)  
 - 🛠️ **Smart Contracts:** `contracts/` folder in the repo  
-- 🌐 **Demo Video:** [YouTube](https://youtube.com/yourdemo) *(optional)*  
-- 💬 **Join the Community:** [Discord](https://discord.gg/yourinvite)
+- 🌐 **Demo Video:** [YouTube](https://youtu.be/KnNcaDUh3KE?si=ZW8RquniveyvJbF7)   
+- 💬 **Join the Community:** [Discord](In progress)
 
 ---
 

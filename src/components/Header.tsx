@@ -33,7 +33,7 @@ export function Header() {
       <div className="container mx-auto flex items-center justify-between py-4">
         <Link to="/" className="flex items-center space-x-2">
           <span className="text-2xl font-bold bg-gradient-to-r from-web3-primary to-web3-tertiary bg-clip-text text-transparent">
-            Web3Work
+            SwipeGig
           </span>
         </Link>
 
