@@ -23,6 +23,7 @@ import { uploadFileToIPFS } from '@/utils/pinata';
 import Groq from "groq-sdk";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { TokenSelector } from '@/components/TokenSelector';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_JOBS_CONTRACT_ADDRESS;
 
@@ -38,6 +39,7 @@ interface FormState {
   duration: string;
   location: 'remote' | 'onsite' | 'hybrid';
   immediate: boolean;
+  paymentToken: string;
 }
 
 const PostJob = () => {
@@ -65,6 +67,7 @@ const [logoPreview, setLogoPreview] = useState<string>('');
     duration: '',
     location: 'remote',
     immediate: false,
+      paymentToken: '',
   });
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -501,6 +504,11 @@ if (skillsMatch) {
                     </div>
                   </div>
                 </div>
+                <div className="space-y-4">
+  <TokenSelector 
+    onSelect={(token) => setForm(prev => ({ ...prev, paymentToken: token }))}
+  />
+</div>
                 <div>
                   <Label htmlFor="duration" className="block text-sm font-medium mb-1">
                     Duration
