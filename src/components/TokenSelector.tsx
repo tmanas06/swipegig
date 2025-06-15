@@ -64,7 +64,7 @@ export const TokenSelector = ({ onSelect }: { onSelect: (token: string) => void 
       <Label>Payment Token</Label>
       <Select onValueChange={onSelect}>
         <SelectTrigger>
-          <SelectValue placeholder="Select payment token" />
+          <SelectValue placeholder="Select payment token (please wait 5 seconds for token list to load)" />
         </SelectTrigger>
         <SelectContent>
           {/* Verified Tokens */}
