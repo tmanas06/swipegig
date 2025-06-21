@@ -1,108 +1,70 @@
 // src/contexts/ProfileContext.tsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
-
-// Define profile data structure based on your current static data
-interface ProfileData {
-  name: string;
-  bio: string;
-  profilePic: string;
-  wallet: string;
-  did: string;
-  lens: string;
-  gitcoinStamps: number;
-  skillNFTs: string[];
-  verified: boolean;
-  social: {
-    github: string;
-    linkedin: string;
-    twitter: string;
-  };
-  skills: string[];
-  reputation: {
-    score: number;
-    jobs: number;
-    breakdown: Array<{ label: string; value: number }>;
-  };
-  portfolio: Array<{ name: string; link: string; rating: number }>;
-  reviews: Array<{ client: string; comment: string; date: string }>;
-  lastCID?: string; // Track the latest IPFS CID
-}
-
-// Default profile matches your static data
-const defaultProfile: ProfileData = {
-  name: "Jane Doe",
-  bio: "Smart Contract Developer | DeFi Enthusiast | Building trustless systems.",
-  profilePic: "https://randomuser.me/api/portraits/women/65.jpg",
-  wallet: "0x08fd...6a19",
-  did: "did:ethr:0x1a2b3c...",
-  lens: "@web3dev.lens",
-  gitcoinStamps: 24,
-  skillNFTs: ["Solidity", "Auditing", "React"],
-  verified: true,
-  social: {
-    github: "https://github.com/janedoe",
-    linkedin: "https://linkedin.com/in/janedoe",
-    twitter: "https://twitter.com/janedoe",
-  },
-  skills: ["Solidity Developer", "Smart Contract Auditor", "Frontend Web3 Dev"],
-  reputation: {
-    score: 4.8,
-    jobs: 12,
-    breakdown: [
-      { label: "Communication", value: 4.9 },
-      { label: "Quality of Work", value: 5.0 },
-      { label: "Timeliness", value: 4.7 },
-      { label: "Code Quality", value: 4.8 },
-    ],
-  },
-  portfolio: [
-    { name: "Uniswap Audit", link: "#", rating: 5 },
-    { name: "NFT Mint Site", link: "#", rating: 4.8 },
-  ],
-  reviews: [
-    { client: "Alice", comment: "Great work, fast delivery", date: "2025-03-14" },
-    { client: "Bob", comment: "Expert in smart contracts", date: "2025-02-20" },
-  ],
-};
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getTokenBalances, getNFTs, TokenBalance, NFT } from '../services/jupiter';
 
 interface ProfileContextType {
-  profile: ProfileData;
-  updateProfile: (newProfile: ProfileData) => void;
+  tokenBalances: TokenBalance[];
+  nfts: NFT[];
   loading: boolean;
+  error: string | null;
+  refreshBalances: (address?: string) => Promise<void>;
 }
 
-const ProfileContext = createContext<ProfileContextType>({
-  profile: defaultProfile,
-  updateProfile: () => {},
-  loading: false,
-});
+const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
-export const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
-  const [profile, setProfile] = useState<ProfileData>(defaultProfile);
+export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
+  const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load saved profile on component mount
-  useEffect(() => {
-    const savedProfile = localStorage.getItem('profileData');
-    if (savedProfile) {
+  const refreshBalances = useCallback(async (address?: string) => {
+    if (!address) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Validate Solana address
       try {
-        setProfile(JSON.parse(savedProfile));
-      } catch (error) {
-        console.error('Error loading saved profile', error);
+        new PublicKey(address);
+      } catch (err) {
+        throw new Error('Invalid Solana address');
       }
+
+      const [balances, nftData] = await Promise.all([
+        getTokenBalances(address),
+        getNFTs(address)
+      ]);
+      
+      setTokenBalances(balances);
+      setNfts(nftData);
+    } catch (err) {
+      console.error('Error refreshing balances:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch wallet data');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const updateProfile = (newProfile: ProfileData) => {
-    setProfile(newProfile);
-    localStorage.setItem('profileData', JSON.stringify(newProfile));
-  };
-
   return (
-    <ProfileContext.Provider value={{ profile, updateProfile, loading }}>
+    <ProfileContext.Provider value={{ 
+      tokenBalances, 
+      nfts, 
+      loading, 
+      error, 
+      refreshBalances 
+    }}>
       {children}
     </ProfileContext.Provider>
   );
 };
 
-export const useProfile = () => useContext(ProfileContext);
+export const useProfile = () => {
+  const context = useContext(ProfileContext);
+  if (!context) {
+    throw new Error('useProfile must be used within a ProfileProvider');
+  }
+  return context;
+};

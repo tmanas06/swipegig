@@ -14,6 +14,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { WalletProvider } from "@/context/WalletContext";
 
+
 // Import pages
 import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
@@ -44,8 +45,8 @@ const WalletWrapper: React.FC<PropsWithChildren> = ({ children }) => {
         autoConnect: false,
         env: 'devnet', // Using devnet for testing
         metadata: {
-          name: 'Rootstock Hackathon',
-          description: 'Rootstock Hackathon Project',
+          name: 'Swipegig',
+          description: 'Hackathon Project',
           url: 'https://your-project-url.com',
           iconUrls: ['https://your-project-url.com/logo.png'],
         },
@@ -72,6 +73,7 @@ const App: React.FC = () => (
             <Route path="/" element={<Index />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/post-job" element={<PostJob />} />
+            <Route path="/Hire-talents" element={<PostJob />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/profile" element={<MyProfile />} />

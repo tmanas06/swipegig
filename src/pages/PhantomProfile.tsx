@@ -154,7 +154,7 @@ export default function PhantomProfile() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Balance</p>
-                  <p className="text-xl font-semibold">{balance} ETH</p>
+                  <p className="text-xl font-semibold">{balance} SOL (JUP)</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Network</p>

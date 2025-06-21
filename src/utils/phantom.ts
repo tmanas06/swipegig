@@ -1,21 +1,23 @@
-// Phantom Wallet Provider
-declare global {
-  interface Window {
-    phantom?: {
-      solana?: {
-        isPhantom?: boolean;
-        connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
-        disconnect: () => Promise<void>;
-        on: (event: string, callback: (args: any) => void) => void;
-        off: (event: string, callback: (args: any) => void) => void;
-        isConnected: boolean;
-        publicKey?: {
-          toString: () => string;
-        };
-      };
-    };
-  }
+// Type for the Phantom wallet
+export interface PhantomWallet {
+  isPhantom?: boolean;
+  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
+  disconnect: () => Promise<void>;
+  on: (event: string, callback: (args: any) => void) => void;
+  off: (event: string, callback: (args: any) => void) => void;
+  isConnected: boolean;
+  publicKey?: {
+    toString: () => string;
+  };
+  signTransaction: (transaction: any) => Promise<any>;
+  signAllTransactions: (transactions: any[]) => Promise<any[]>;
+  [key: string]: any;
 }
+
+// Get the Phantom wallet instance
+export const getPhantomWallet = (): PhantomWallet | undefined => {
+  return (window as any).phantom?.solana;
+};
 
 export const isPhantomInstalled = (): boolean => {
   return !!window.phantom?.solana?.isPhantom;
