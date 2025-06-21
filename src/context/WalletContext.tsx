@@ -2,17 +2,17 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 // Rootstock Testnet configuration from the screenshot
-// Jupiter Testnet configuration (example)
-const JUPITER_TESTNET = {
-  chainId: '0x888', // e.g., 2184 in hex, replace with actual if known
-  chainName: 'Jupiter Testnet',
-  rpcUrls: ['https://rpc.testnet.jupiter.org'], // Replace with actual
+// Solana Testnet configuration
+const SOLANA_TESTNET = {
+  chainId: '0x1', // Solana Devnet uses chain ID 1
+  chainName: 'Solana Devnet',
+  rpcUrls: ['https://api.devnet.solana.com'],
   nativeCurrency: {
-    name: 'Test JUP',
-    symbol: 'tJUP',
-    decimals: 18,
+    name: 'SOL',
+    symbol: 'SOL',
+    decimals: 9,
   },
-  blockExplorerUrls: ['https://explorer.testnet.jupiter.org'], // Replace with actual
+  blockExplorerUrls: ['https://explorer.solana.com/?cluster=devnet'],
 };
 
 
@@ -76,10 +76,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  const switchToJupiterTestnet = async () => {
+  const switchToSolanaTestnet = async () => {
     if (!window.ethereum) return false;
   
-    const testnetChainId = '0x888'; // Replace with actual chain ID hex
+    const testnetChainId = '0x1'; // Solana Devnet chain ID
   
     try {
       await window.ethereum.request({
@@ -92,17 +92,17 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [JUPITER_TESTNET],
+            params: [SOLANA_TESTNET],
           });
           return true;
         } catch (addError) {
-          console.error('Error adding Jupiter Testnet:', addError);
-          toast.error('Failed to add Jupiter Testnet to your wallet');
+          console.error('Error adding Solana Testnet:', addError);
+          toast.error('Failed to add Solana Testnet to your wallet');
           return false;
         }
       } else {
-        console.error('Error switching to Jupiter Testnet:', error);
-        toast.error('Failed to switch to Jupiter Testnet');
+        console.error('Error switching to Solana Testnet:', error);
+        toast.error('Failed to switch to Solana Testnet');
         return false;
       }
     }
@@ -121,11 +121,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Request accounts
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       
-      // Switch to Rootstock Testnet
-      // Replace inside connectWallet:
-      const switched = await switchToJupiterTestnet();
+      // Switch to Solana Testnet
+      const switched = await switchToSolanaTestnet();
       if (!switched) {
-        toast.error('Please connect to Jupiter Testnet to use this application');
+        toast.error('Please connect to Solana Testnet to use this application');
         setIsConnecting(false);
         return;
       }
@@ -142,7 +141,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         setNetworkId(parseInt(chainId, 16));
         
-        toast.success('Connected to Rootstock Testnet successfully!');
+        toast.success('Connected to Solana Testnet successfully!');
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
