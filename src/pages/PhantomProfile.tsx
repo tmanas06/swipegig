@@ -11,7 +11,7 @@ export default function PhantomProfile() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [balance, setBalance] = useState<string>('0');
-  const [network, setNetwork] = useState<string>('');
+  const [network, setNetwork] = useState<string>('Jupiter Mainnet');
 
   // Check if Phantom is installed on component mount
   useEffect(() => {
@@ -61,10 +61,10 @@ export default function PhantomProfile() {
 
   const fetchWalletInfo = async (publicKey: string) => {
     try {
-      // In a real app, you would fetch actual balance and network info
-      // This is a placeholder implementation
-      setBalance('1.5');
-      setNetwork('Solana Devnet');
+      // Fetch balance from Jupiter mainnet
+      // This is a placeholder - replace with actual Jupiter mainnet balance fetch
+      setBalance('0');
+      setNetwork('Jupiter Mainnet');
     } catch (error) {
       console.error('Error fetching wallet info:', error);
     }
@@ -154,11 +154,13 @@ export default function PhantomProfile() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Balance</p>
-                  <p className="text-xl font-semibold">{balance} SOL</p>
+                  <p className="text-xl font-semibold">{balance} ETH</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Network</p>
-                  <p className="text-xl font-semibold">{network || 'Not connected'}</p>
+                  <div className="text-sm text-muted-foreground">
+                    {network}
+                  </div>
                 </div>
               </div>
 

@@ -1,20 +1,30 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { toast } from '@/components/ui/sonner';
 
-// Rootstock Testnet configuration from the screenshot
-// Solana Testnet configuration
-const SOLANA_TESTNET = {
-  chainId: '0x1', // Solana Devnet uses chain ID 1
-  chainName: 'Solana Devnet',
-  rpcUrls: ['https://api.devnet.solana.com'],
-  nativeCurrency: {
-    name: 'SOL',
-    symbol: 'SOL',
-    decimals: 9,
-  },
-  blockExplorerUrls: ['https://explorer.solana.com/?cluster=devnet'],
-};
+// Solana Mainnet configuration
+declare global {
+  interface Window {
+    phantom?: {
+      solana?: {
+        isPhantom?: boolean;
+        connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
+        disconnect: () => Promise<void>;
+        on: (event: string, callback: (args: any) => void) => void;
+        off: (event: string, callback: (args: any) => void) => void;
+        isConnected: boolean;
+        publicKey?: {
+          toString: () => string;
+        };
+      };
+    };
+  }
+}
 
+// Jupiter API configuration
+export const JUPITER_CONFIG = {
+  apiBaseUrl: 'https://quote-api.jup.ag/v6', // Jupiter API endpoint
+  defaultSlippageBps: 50, // 0.5% slippage
+};
 
 type WalletContextType = {
   account: string | null;
@@ -24,6 +34,8 @@ type WalletContextType = {
   userRole: 'freelancer' | 'client' | null;
   setUserRole: (role: 'freelancer' | 'client' | null) => void;
   networkId: number | null;
+  balance: number | null;
+  isPhantomInstalled: boolean;
 };
 
 const WalletContext = createContext<WalletContextType>({
@@ -34,140 +46,158 @@ const WalletContext = createContext<WalletContextType>({
   userRole: null,
   setUserRole: () => {},
   networkId: null,
+  balance: null,
+  isPhantomInstalled: false,
 });
 
-export const useWallet = () => useContext(WalletContext);
+const useWallet = () => useContext(WalletContext);
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [account, setAccount] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<'freelancer' | 'client' | null>(null);
-  const [networkId, setNetworkId] = useState<number | null>(null);
+const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [account, setAccount] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('walletAddress') || null;
+    }
+    return null;
+  });
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [userRole, setUserRole] = useState<'freelancer' | 'client' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('userRole');
+      return role === 'freelancer' || role === 'client' ? role : null;
+    }
+    return null;
+  });
+  const [networkId, setNetworkId] = useState<number | null>(1); // Default to Solana Mainnet
+  const [balance, setBalance] = useState<number | null>(null);
+  const [isPhantomInstalled, setIsPhantomInstalled] = useState(false);
 
+  // Check if Phantom is installed
   useEffect(() => {
-    // Check if user was previously connected
-    const savedAccount = localStorage.getItem('walletAccount');
-    const savedRole = localStorage.getItem('userRole') as 'freelancer' | 'client' | null;
-    
-    if (savedAccount) {
-      setAccount(savedAccount);
-    }
-    
-    if (savedRole) {
-      setUserRole(savedRole);
-    }
+    setIsPhantomInstalled(!!window.phantom?.solana?.isPhantom);
+  }, []);
 
-    // Setup network change listener
-    if (window.ethereum) {
-      const handleChainChanged = (chainId: string) => {
-        setNetworkId(parseInt(chainId, 16));
-      };
+  // Fetch SOL balance using Jupiter API
+  const fetchSolBalance = useCallback(async (publicKey: string) => {
+    try {
+      // In a real app, you would fetch the actual balance from the Solana network
+      // This is a placeholder implementation
+      setBalance(0); // Set to 0 as a placeholder
       
-      window.ethereum.on('chainChanged', handleChainChanged);
-      
-      // Get initial network
-      window.ethereum.request({ method: 'eth_chainId' })
-        .then((chainId: string) => setNetworkId(parseInt(chainId, 16)))
-        .catch(console.error);
-        
-      return () => {
-        window.ethereum?.removeListener('chainChanged', handleChainChanged);
-      };
+      // Example of how you might fetch balance in a real app:
+      // const response = await fetch(`${JUPITER_CONFIG.apiBaseUrl.replace('/v6', '')}/account/${publicKey}/balance`);
+      // const data = await response.json();
+      // setBalance(Number(data.result?.value || 0) / 1e9); // Convert lamports to SOL
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      setBalance(null);
     }
   }, []);
 
-  const switchToSolanaTestnet = async () => {
-    if (!window.ethereum) return false;
-  
-    const testnetChainId = '0x1'; // Solana Devnet chain ID
-  
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: testnetChainId }],
-      });
-      return true;
-    } catch (error: any) {
-      if (error.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [SOLANA_TESTNET],
-          });
-          return true;
-        } catch (addError) {
-          console.error('Error adding Solana Testnet:', addError);
-          toast.error('Failed to add Solana Testnet to your wallet');
-          return false;
-        }
-      } else {
-        console.error('Error switching to Solana Testnet:', error);
-        toast.error('Failed to switch to Solana Testnet');
-        return false;
-      }
+  // Handle account change
+  const handleAccountChanged = useCallback((publicKey: string | null) => {
+    if (publicKey) {
+      setAccount(publicKey);
+      fetchSolBalance(publicKey);
+      localStorage.setItem('walletConnected', 'true');
+      localStorage.setItem('walletAddress', publicKey);
+      setNetworkId(1); // Solana Mainnet
+    } else {
+      setAccount(null);
+      setBalance(null);
+      setNetworkId(null);
+      localStorage.removeItem('walletConnected');
+      localStorage.removeItem('walletAddress');
     }
-  };
-  
+  }, [fetchSolBalance]);
 
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast.error('MetaMask not detected! Please install MetaMask to connect.');
+  // Check wallet connection on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (isPhantomInstalled && window.phantom?.solana) {
+        try {
+          const response = await window.phantom.solana.connect({ onlyIfTrusted: true });
+          const publicKey = response.publicKey.toString();
+          handleAccountChanged(publicKey);
+        } catch (error) {
+          console.error('Error checking connection:', error);
+        }
+      } else if (localStorage.getItem('walletConnected') && localStorage.getItem('walletAddress')) {
+        // If we have a stored connection but Phantom isn't connected, clear the stored connection
+        handleAccountChanged(null);
+      }
+    };
+
+    checkConnection();
+  }, [isPhantomInstalled, handleAccountChanged]);
+
+  // Set up event listeners
+  useEffect(() => {
+    if (!window.phantom?.solana) return;
+
+    const handleConnect = (publicKey: { toString: () => string }) => {
+      handleAccountChanged(publicKey.toString());
+    };
+
+    const handleDisconnect = () => {
+      handleAccountChanged(null);
+    };
+
+    window.phantom.solana.on('connect', handleConnect);
+    window.phantom.solana.on('disconnect', handleDisconnect);
+
+    return () => {
+      window.phantom?.solana?.off('connect', handleConnect);
+      window.phantom?.solana?.off('disconnect', handleDisconnect);
+    };
+  }, [handleAccountChanged]);
+
+  const connectWallet = useCallback(async () => {
+    if (!window.phantom?.solana) {
+      window.open('https://phantom.app/', '_blank');
       return;
     }
 
     setIsConnecting(true);
 
     try {
-      // Request accounts
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      // Connect to Phantom wallet
+      const response = await window.phantom.solana.connect();
+      const publicKey = response.publicKey.toString();
       
-      // Switch to Solana Testnet
-      const switched = await switchToSolanaTestnet();
-      if (!switched) {
-        toast.error('Please connect to Solana Testnet to use this application');
-        setIsConnecting(false);
-        return;
-      }
-
-      
-      // Get current accounts
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      
-      if (accounts.length > 0) {
-        setAccount(accounts[0]);
-        localStorage.setItem('walletAccount', accounts[0]);
-        
-        // Get current network after switch
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        setNetworkId(parseInt(chainId, 16));
-        
-        toast.success('Connected to Solana Testnet successfully!');
-      }
+      // Update account and fetch balance
+      handleAccountChanged(publicKey);
+      toast.success('Connected to Phantom wallet');
     } catch (error) {
-      console.error('Error connecting wallet:', error);
-      toast.error('Failed to connect wallet');
+      console.error('Error connecting to Phantom:', error);
+      toast.error('Failed to connect to Phantom wallet');
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [handleAccountChanged]);
 
-  const disconnectWallet = () => {
-    setAccount(null);
-    setUserRole(null);
-    setNetworkId(null);
-    localStorage.removeItem('walletAccount');
-    localStorage.removeItem('userRole');
-    toast.info('Wallet disconnected');
-  };
+  const disconnectWallet = useCallback(async () => {
+    try {
+      if (window.phantom?.solana) {
+        await window.phantom.solana.disconnect();
+      }
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+    } finally {
+      handleAccountChanged(null);
+      setUserRole(null);
+      localStorage.removeItem('userRole');
+      toast.info('Wallet disconnected');
+    }
+  }, [handleAccountChanged]);
 
-  const handleRoleChange = (role: 'freelancer' | 'client' | null) => {
+  const handleRoleChange = useCallback((role: 'freelancer' | 'client' | null) => {
     setUserRole(role);
     if (role) {
       localStorage.setItem('userRole', role);
     } else {
       localStorage.removeItem('userRole');
     }
-  };
+  }, []);
 
   return (
     <WalletContext.Provider
@@ -179,12 +209,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         userRole,
         setUserRole: handleRoleChange,
         networkId,
+        balance,
+        isPhantomInstalled,
       }}
     >
       {children}
     </WalletContext.Provider>
   );
 };
+
+export { WalletContext, WalletProvider, useWallet };
 
 // Type declaration for window.ethereum
 declare global {
