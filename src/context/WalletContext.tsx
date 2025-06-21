@@ -2,17 +2,19 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 // Rootstock Testnet configuration from the screenshot
-const ROOTSTOCK_TESTNET = {
-  chainId: '0x1f', // 31 in hexadecimal
-  chainName: 'Rootstock Testnet',
-  rpcUrls: ['https://public-node.testnet.rsk.co'],
+// Jupiter Testnet configuration (example)
+const JUPITER_TESTNET = {
+  chainId: '0x888', // e.g., 2184 in hex, replace with actual if known
+  chainName: 'Jupiter Testnet',
+  rpcUrls: ['https://rpc.testnet.jupiter.org'], // Replace with actual
   nativeCurrency: {
-    name: 'Test RBTC',
-    symbol: 'tRBTC',
-    decimals: 18
+    name: 'Test JUP',
+    symbol: 'tJUP',
+    decimals: 18,
   },
-  blockExplorerUrls: ['https://explorer.testnet.rsk.co']
+  blockExplorerUrls: ['https://explorer.testnet.jupiter.org'], // Replace with actual
 };
+
 
 type WalletContextType = {
   account: string | null;
@@ -74,40 +76,38 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  const switchToRootstockTestnet = async () => {
+  const switchToJupiterTestnet = async () => {
     if (!window.ethereum) return false;
-    
-    const testnetChainId = '0x1f'; // 31 in hex
-    
+  
+    const testnetChainId = '0x888'; // Replace with actual chain ID hex
+  
     try {
-      // Try to switch to Rootstock Testnet
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: testnetChainId }],
       });
       return true;
     } catch (error: any) {
-      // This error code indicates that the chain has not been added to MetaMask
       if (error.code === 4902) {
         try {
-          // Add the Rootstock Testnet network
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [ROOTSTOCK_TESTNET],
+            params: [JUPITER_TESTNET],
           });
           return true;
         } catch (addError) {
-          console.error('Error adding Rootstock Testnet:', addError);
-          toast.error('Failed to add Rootstock Testnet to your wallet');
+          console.error('Error adding Jupiter Testnet:', addError);
+          toast.error('Failed to add Jupiter Testnet to your wallet');
           return false;
         }
       } else {
-        console.error('Error switching to Rootstock Testnet:', error);
-        toast.error('Failed to switch to Rootstock Testnet');
+        console.error('Error switching to Jupiter Testnet:', error);
+        toast.error('Failed to switch to Jupiter Testnet');
         return false;
       }
     }
   };
+  
 
   const connectWallet = async () => {
     if (!window.ethereum) {
@@ -122,12 +122,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       
       // Switch to Rootstock Testnet
-      const switched = await switchToRootstockTestnet();
+      // Replace inside connectWallet:
+      const switched = await switchToJupiterTestnet();
       if (!switched) {
-        toast.error('Please connect to Rootstock Testnet to use this application');
+        toast.error('Please connect to Jupiter Testnet to use this application');
         setIsConnecting(false);
         return;
       }
+
       
       // Get current accounts
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
