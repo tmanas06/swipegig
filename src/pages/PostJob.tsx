@@ -107,7 +107,7 @@ const PostJob = () => {
   };
 
   const groq = new Groq({
-    apiKey: import.meta.env.VITE_GROQ_API_KEY,
+    apiKey: import.meta.env['VITE_GROQ_API_KEY'],
     dangerouslyAllowBrowser: true
   });
 
@@ -121,8 +121,18 @@ const PostJob = () => {
     
     try {
       // Validate form
-      if (!form.title || !form.description || !form.category || form.skills.length === 0) {
-        throw new Error('Please fill in all required fields');
+      // Update the validation in handleSubmit
+      if (!form.title) {
+        throw new Error('Job title is required');
+      }
+      if (!form.description) {
+        throw new Error('Job description is required');
+      }
+      if (!form.category) {
+        throw new Error('Please select a category');
+      }
+      if (form.skills.length === 0) {
+        throw new Error('Please add at least one required skill');
       }
 
       if (form.budgetMin > form.budgetMax) {
@@ -171,31 +181,30 @@ const PostJob = () => {
         createdAt: Math.floor(Date.now() / 1000)
       };
       
-      try {
-        // Upload job data to IPFS
-        const cid = await uploadJSONToIPFS(jobData);
-        
-        // Interact with smart contract
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(
-          CONTRACT_ADDRESS?.toLowerCase(),
-          Web3WorkJobsABI,
-          signer
-        );
-    
-        const tx = await contract.postJob(cid);
-        const receipt = await tx.wait();
-    
-        if (receipt.status === 1) {
-          toast.success('Job posted successfully!');
-          navigate('/jobs');
-        } else {
-          throw new Error('Transaction failed');
-        }
-      } catch (error) {
-        console.error('Contract interaction failed:', error);
-        throw new Error('Failed to post job to blockchain');
+      // Upload job data to IPFS
+      const cid = await uploadJSONToIPFS(jobData);
+      
+      // Get signer from wallet context
+      if (!window.ethereum) {
+        throw new Error('Ethereum provider not found');
+      }
+      
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESS?.toLowerCase(),
+        Web3WorkJobsABI,
+        signer
+      );
+  
+      const tx = await contract.postJob(cid);
+      const receipt = await tx.wait();
+  
+      if (receipt.status === 1) {
+        toast.success('Job posted successfully!');
+        navigate('/jobs');
+      } else {
+        throw new Error('Transaction failed');
       }
     } catch (error) {
       console.error('Job post failed:', error);

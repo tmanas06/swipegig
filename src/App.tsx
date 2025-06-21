@@ -29,6 +29,7 @@ import RegistrationPage from "./pages/RegistrationPage";
 import PublicProfile from "./pages/publicProfile";
 import PaymentsPage from "./pages/PaymentsPage";
 import PhantomProfile from "./pages/PhantomProfile";
+import Talent from "./pages/Talent";
 import { UnifiedWalletProvider } from "@jup-ag/wallet-adapter";
 import { WalletConnectButton } from "./components/WalletConnectButton";
 
@@ -82,6 +83,7 @@ const App: React.FC = () => (
 <Route path="/public-profile/:cid" element={<PublicProfile />} />
             <Route path="/pay" element={<PaymentsPage />} />
             <Route path="/phantom" element={<PhantomProfile />} />
+            <Route path="/talent" element={<Talent />} />
             <Route path="/wallet" element={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">
                 <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
